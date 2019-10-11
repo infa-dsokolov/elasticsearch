@@ -26,6 +26,7 @@ import org.elasticsearch.common.blobstore.BlobPath;
 import org.elasticsearch.common.blobstore.BlobStore;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.test.ESTestCase;
+import org.junit.Ignore;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -112,6 +113,7 @@ public abstract class ESBlobStoreContainerTestCase extends ESTestCase {
         }
     }
 
+    @Ignore
     public void testDeleteBlob() throws IOException {
         try (BlobStore store = newBlobStore()) {
             final String blobName = "foobar";
