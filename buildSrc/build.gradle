@@ -289,7 +289,7 @@ class VersionPropertiesLoader {
     final String buildSnapshotSystemProperty = systemProperties.getProperty("build.snapshot", "true");
     switch (buildSnapshotSystemProperty) {
       case "true":
-        elasticsearch += "-SNAPSHOT"
+        elasticsearch += "-MDM"
         break;
       case "false":
         // do nothing

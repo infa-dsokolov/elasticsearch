@@ -76,7 +76,7 @@ public final class Version implements Comparable<Version> {
 
     public static Version fromString(final String s, final Mode mode) {
         Objects.requireNonNull(s);
-        Matcher matcher = mode == Mode.STRICT ? pattern.matcher(s) : relaxedPattern.matcher(s);
+        Matcher matcher = mode == Mode.RELAXED ? pattern.matcher(s) : relaxedPattern.matcher(s);
         if (matcher.matches() == false) {
             String expected = mode == Mode.STRICT
                 ? "major.minor.revision[-(alpha|beta|rc)Number][-SNAPSHOT]"

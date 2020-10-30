@@ -38,6 +38,8 @@ import org.elasticsearch.common.collect.MapBuilder;
 import org.elasticsearch.common.settings.Settings;
 
 import java.io.Closeable;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Map;
 
 import static java.util.Collections.emptyMap;
@@ -194,12 +196,16 @@ class S3Service implements Closeable {
     // pkg private for tests
     static AWSCredentialsProvider buildCredentials(Logger logger, S3ClientSettings clientSettings) {
         final S3BasicCredentials credentials = clientSettings.credentials;
-        if (credentials == null) {
-            logger.debug("Using instance profile credentials");
-            return new PrivilegedInstanceProfileCredentialsProvider();
-        } else {
-            logger.debug("Using basic key/secret credentials");
+        String awsWebIdentityEnv = System.getenv().get(SDKGlobalConfiguration.AWS_WEB_IDENTITY_ENV_VAR);
+        if (credentials != null) {
+            logger.info("Using basic key/secret credentials");
             return new AWSStaticCredentialsProvider(credentials);
+        } else if (awsWebIdentityEnv != null && !awsWebIdentityEnv.isEmpty()) {
+            logger.info("Using web identity token");
+            return new PrivilegedWebIdentityTokenCredentialsProvider();
+        } else {
+            logger.info("Using instance profile credentials");
+            return new PrivilegedInstanceProfileCredentialsProvider();
         }
     }
 
@@ -232,6 +238,28 @@ class S3Service implements Closeable {
         @Override
         public void refresh() {
             SocketAccess.doPrivilegedVoid(credentials::refresh);
+        }
+    }
+
+    static class PrivilegedWebIdentityTokenCredentialsProvider implements AWSCredentialsProvider {
+
+        private final AWSCredentialsProvider credentials;
+
+        private PrivilegedWebIdentityTokenCredentialsProvider() {
+            this.credentials = WebIdentityTokenCredentialsProvider.create();
+        }
+
+        @Override
+        public AWSCredentials getCredentials() {
+            return AccessController.doPrivileged((PrivilegedAction<AWSCredentials>) credentials::getCredentials);
+        }
+
+        @Override
+        public void refresh() {
+            AccessController.doPrivileged((PrivilegedAction<Void>)() -> {
+                credentials.refresh();
+                return null;
+            });
         }
     }
 
